@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Viv Chat – Login / Signup</title>
+  <script src="https://unpkg.com/parse/dist/parse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 300px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #1a202c;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    button {
+      background-color: #3182ce;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2b6cb0;
+    }
+    #status {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Viv Chat</h1>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Sign Up</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    Parse.initialize("YOUR_APP_ID", "YOUR_JAVASCRIPT_KEY");
+    Parse.serverURL = "https://parseapi.back4app.com/";
+
+    async function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      try {
+        await Parse.User.logIn(username, password);
+        localStorage.setItem("viv_user", username);
+        window.location.href = "chat.html";
+      } catch (error) {
+        document.getElementById("status").textContent = error.message;
+      }
+    }
+
+    async function signup() {
+      const user = new Parse.User();
+      user.set("username", document.getElementById("username").value.trim());
+      user.set("password", document.getElementById("password").value);
+      try {
+        await user.signUp();
+        localStorage.setItem("viv_user", user.get("username"));
+        window.location.href = "chat.html";
+      } catch (error) {
+        document.getElementById("status").textContent = error.message;
+      }
+    }
+  </script>
+</body>
+</html>
