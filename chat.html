@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Viv Chat – Messages</title>
   <style>
     body {
@@ -102,11 +102,10 @@
 
   <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
   <script>
-    // Replace these with your Back4App keys
     Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
     Parse.serverURL = "https://parseapi.back4app.com/";
 
-    const currentUser = localStorage.getItem("viv_username");
+    const currentUser = localStorage.getItem("viv_user");
     if (!currentUser) {
       alert("Not logged in. Redirecting...");
       window.location.href = "index.html";
@@ -115,6 +114,9 @@
     const messagesDiv = document.getElementById("messages");
     const recipientInput = document.getElementById("recipientInput");
     const messageInput = document.getElementById("messageInput");
+
+    // Track shown message IDs to prevent duplicates
+    let shownMessageIds = new Set();
 
     async function sendMessage() {
       const recipient = recipientInput.value.trim();
@@ -155,15 +157,19 @@
 
       try {
         const results = await mainQuery.find();
-        messagesDiv.innerHTML = "";
 
-        results.forEach(msg => {
+        for (const msg of results) {
+          const msgId = msg.id;
+          if (shownMessageIds.has(msgId)) continue;
+
           const msgEl = document.createElement("div");
           const from = msg.get("sender") === currentUser ? "from-me" : "from-other";
           msgEl.className = "message " + from;
           msgEl.textContent = `${msg.get("sender")}: ${msg.get("text")}`;
           messagesDiv.appendChild(msgEl);
-        });
+
+          shownMessageIds.add(msgId);
+        }
 
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       } catch (error) {
@@ -171,8 +177,13 @@
       }
     }
 
-    recipientInput.addEventListener("change", fetchMessages);
-    setInterval(fetchMessages, 5000); // auto-refresh every 5 sec
+    recipientInput.addEventListener("change", () => {
+      shownMessageIds.clear();
+      messagesDiv.innerHTML = "";
+      fetchMessages();
+    });
+
+    setInterval(fetchMessages, 5000); // refresh every 5 seconds
   </script>
 </body>
 </html>
