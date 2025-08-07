@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -60,38 +61,52 @@
       to { opacity: 1; transform: scale(1); }
     }
   </style>
+
+  <!-- ✅ Parse SDK -->
   <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
+
   <script>
-    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-    Parse.serverURL = "https://parseapi.back4app.com/";async function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-  try {
-    await Parse.User.logIn(username, password);
-    alert("Login successful! Redirecting...");
-    window.location.href = "chat.html";
-  } catch (error) {
-    alert("Error: " + error.message);
-  }
-}
+    // ✅ Initialize Parse
+    Parse.initialize(
+      "NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m",
+      "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf"
+    );
+    Parse.serverURL = "https://parseapi.back4app.com/";
 
-async function signUp() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-  const user = new Parse.User();
-  user.set("username", username);
-  user.set("password", password);
-  try {
-    await user.signUp();
-    alert("Sign up successful! Redirecting...");
-    window.location.href = "chat.html";
-  } catch (error) {
-    alert("Error: " + error.message);
-  }
-}
+    // ✅ Login function
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
+      try {
+        await Parse.User.logIn(username, password);
+        alert("Login successful! Redirecting...");
+        window.location.href = "chat.html";
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    }
+
+    // ✅ Sign Up function
+    async function signUp() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const user = new Parse.User();
+      user.set("username", username);
+      user.set("password", password);
+
+      try {
+        await user.signUp();
+        alert("Sign up successful! Redirecting...");
+        window.location.href = "chat.html";
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    }
   </script>
 </head>
+
 <body>
   <div class="container">
     <h2>Welcome to Viv Chat</h2>
