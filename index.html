@@ -1,90 +1,117 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
-  <title>Viv Chat – Login</title>
-  <script src="https://unpkg.com/parse/dist/parse.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viv Chat - Login</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #edf2f7;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f0f;
+      color: #ffffff;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
-    }
-    h2 {
-      color: #2b6cb0;
-    }
-    input {
-      padding: 10px;
-      margin: 5px;
-      font-size: 16px;
-      width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      font-size: 16px;
-      border: none;
-      background-color: #3182ce;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #2b6cb0;
-    }
-    #message {
-      color: red;
-      margin-top: 10px;
-    }
+      animation: fadeIn 1.5s ease-in;
+    }@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h1 {
+  font-size: 2.5em;
+  margin-bottom: 0.2em;
+  color: #00ff99;
+}
+
+p.description {
+  color: #ccc;
+  margin-bottom: 2em;
+  text-align: center;
+  max-width: 400px;
+}
+
+.form-container {
+  background: #1c1c1c;
+  padding: 2em;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
+  width: 90%;
+  max-width: 400px;
+  animation: fadeIn 1s ease-in;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background: #333;
+  color: white;
+  font-size: 1em;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #00ff99;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #00cc7a;
+}
+
   </style>
 </head>
 <body>
-  <h2>Viv Chat – Login or Sign Up</h2>
-  <input type="text" id="username" placeholder="Username"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
-  <button onclick="signup()">Sign Up</button>
-  <div id="message"></div>
+  <h1>Viv Chat</h1>
+  <p class="description">Login or Sign up to start chatting. Your chats are safe and always with you. Powered by Viv Thunder!</p>
+  <div class="form-container">
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="loginUser()">Login</button>
+    <button onclick="signupUser()" style="margin-top: 10px; background:#333; color:white;">Sign Up</button>
+  </div>  <script>
+    const APP_ID = "YOUR_APP_ID";
+    const JS_KEY = "YOUR_JS_KEY";
 
-  <script>
-    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-    Parse.serverURL = "https://parseapi.back4app.com/";
+    Parse.initialize(APP_ID, JS_KEY);
+    Parse.serverURL = 'https://parseapi.back4app.com/';
 
-    async function login() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-
+    async function loginUser() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
       try {
         await Parse.User.logIn(username, password);
-        localStorage.setItem("viv_user", username);
+        alert("Login successful!");
         window.location.href = "chat.html";
       } catch (error) {
-        document.getElementById("message").textContent = "Login failed: " + error.message;
+        alert("Error: " + error.message);
       }
     }
 
-    async function signup() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-
+    async function signupUser() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
       const user = new Parse.User();
       user.set("username", username);
       user.set("password", password);
-
       try {
         await user.signUp();
-        localStorage.setItem("viv_user", username);
-        window.location.href = "chat.html";
+        alert("Sign up successful! You can now log in.");
       } catch (error) {
-        document.getElementById("message").textContent = "Signup failed: " + error.message;
+        alert("Error: " + error.message);
       }
     }
-  </script>
-</body>
+  </script>  <script src="https://npmcdn.com/parse/dist/parse.min.js"></script></body>
 </html>
