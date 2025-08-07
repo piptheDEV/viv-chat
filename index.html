@@ -5,113 +5,101 @@
   <title>Viv Chat - Login</title>
   <style>
     body {
-      margin: 0;
+      background-color: #121212;
+      color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0f0f0f;
-      color: #ffffff;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
-      animation: fadeIn 1.5s ease-in;
-    }@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-h1 {
-  font-size: 2.5em;
-  margin-bottom: 0.2em;
-  color: #00ff99;
-}
-
-p.description {
-  color: #ccc;
-  margin-bottom: 2em;
-  text-align: center;
-  max-width: 400px;
-}
-
-.form-container {
-  background: #1c1c1c;
-  padding: 2em;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 255, 153, 0.2);
-  width: 90%;
-  max-width: 400px;
-  animation: fadeIn 1s ease-in;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 5px;
-  background: #333;
-  color: white;
-  font-size: 1em;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  background: #00ff99;
-  color: #000;
-  font-weight: bold;
-  border: none;
-  border-radius: 5px;
-  font-size: 1em;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-button:hover {
-  background: #00cc7a;
-}
-
+      margin: 0;
+    }
+    .container {
+      background-color: #1f1f1f;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      width: 320px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00ffe1;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 6px;
+      background-color: #333;
+      color: white;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background-color: #00ffe1;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #00ccba;
+    }
+    p {
+      text-align: center;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
   </style>
+  <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
+  <script>
+    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+    Parse.serverURL = "https://parseapi.back4app.com/";async function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  try {
+    await Parse.User.logIn(username, password);
+    alert("Login successful! Redirecting...");
+    window.location.href = "chat.html";
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+}
+
+async function signUp() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const user = new Parse.User();
+  user.set("username", username);
+  user.set("password", password);
+  try {
+    await user.signUp();
+    alert("Sign up successful! Redirecting...");
+    window.location.href = "chat.html";
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+}
+
+  </script>
 </head>
 <body>
-  <h1>Viv Chat</h1>
-  <p class="description">Login or Sign up to start chatting. Your chats are safe and always with you. Powered by Viv Thunder!</p>
-  <div class="form-container">
+  <div class="container">
+    <h2>Welcome to Viv Chat</h2>
     <input type="text" id="username" placeholder="Username" />
     <input type="password" id="password" placeholder="Password" />
-    <button onclick="loginUser()">Login</button>
-    <button onclick="signupUser()" style="margin-top: 10px; background:#333; color:white;">Sign Up</button>
-  </div>  <script>
-    const APP_ID = "NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m";
-    const JS_KEY = "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf";
-
-    Parse.initialize(APP_ID, JS_KEY);
-    Parse.serverURL = 'https://parseapi.back4app.com/';
-
-    async function loginUser() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-      try {
-        await Parse.User.logIn(username, password);
-        alert("Login successful!");
-        window.location.href = "chat.html";
-      } catch (error) {
-        alert("Error: " + error.message);
-      }
-    }
-
-    async function signupUser() {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-      const user = new Parse.User();
-      user.set("username", username);
-      user.set("password", password);
-      try {
-        await user.signUp();
-        alert("Sign up successful! You can now log in.");
-      } catch (error) {
-        alert("Error: " + error.message);
-      }
-    }
-  </script>  <script src="https://npmcdn.com/parse/dist/parse.min.js"></script></body>
+    <button onclick="login()">Login</button>
+    <p>or</p>
+    <button onclick="signUp()">Sign Up</button>
+  </div>
+</body>
 </html>
