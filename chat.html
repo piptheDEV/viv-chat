@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Viv Chat</title>
   <style>
     body {
@@ -28,17 +28,6 @@
       font-size: 1.2em;
       color: #00ffe1;
       border-bottom: 1px solid #333;
-    }
-    .search-container {
-      padding: 10px;
-    }
-    .search-container input {
-      width: calc(100% - 20px);
-      padding: 8px;
-      border-radius: 5px;
-      border: none;
-      background: #333;
-      color: white;
     }
     .friends {
       flex: 1;
@@ -88,7 +77,7 @@
       background-color: #1f1f1f;
       border-top: 1px solid #333;
     }
-    input[type="text"] {
+    input {
       flex: 1;
       padding: 10px;
       border: none;
@@ -110,17 +99,24 @@
     button:hover {
       background-color: #00ccba;
     }
+    .add-friend-container {
+      padding: 10px;
+      background-color: #1f1f1f;
+      border-top: 1px solid #333;
+    }
   </style>
   <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
 </head>
 <body>
   <div class="sidebar">
     <h2>Friends</h2>
-    <div class="search-container">
-      <input type="text" id="searchFriend" placeholder="Add friend by username" onkeypress="handleSearch(event)">
-    </div>
     <div class="friends" id="friendsList"></div>
+    <div class="add-friend-container">
+      <input type="text" id="addFriendInput" placeholder="Add friend by username...">
+      <button onclick="addFriend()">Add</button>
+    </div>
   </div>
+
   <div class="chat-container">
     <div class="messages" id="messages"></div>
     <div class="input-container">
@@ -128,60 +124,63 @@
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
+
   <script>
     Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
     Parse.serverURL = "https://parseapi.back4app.com/";
 
-    const currentUser = Parse.User.current();
-    if (!currentUser) window.location.href = "login.html";
+    let currentUser = Parse.User.current();
+    if (!currentUser) {
+      window.location.href = "login.html";
+    }
 
     let currentFriend = null;
 
     async function loadFriends() {
-      const Friend = Parse.Object.extend("Friends");
-      const query = new Parse.Query(Friend);
-      query.equalTo("user", currentUser);
-      const results = await query.find();
-
       const friendsList = document.getElementById("friendsList");
       friendsList.innerHTML = "";
 
-      results.forEach(entry => {
-        const friendName = entry.get("friendName");
+      const FriendList = Parse.Object.extend("FriendList");
+      const query = new Parse.Query(FriendList);
+      query.equalTo("owner", currentUser.getUsername());
+      const results = await query.find();
+
+      results.forEach(friendObj => {
+        const friend = friendObj.get("friend");
         const div = document.createElement("div");
         div.className = "friend";
-        div.textContent = friendName;
-        div.onclick = () => selectFriend(friendName);
+        div.textContent = friend;
+        div.onclick = () => selectFriend(friend);
         friendsList.appendChild(div);
       });
     }
 
-    async function handleSearch(e) {
-      if (e.key === "Enter") {
-        const username = e.target.value.trim();
-        if (!username || username === currentUser.getUsername()) return;
+    async function addFriend() {
+      const friendUsername = document.getElementById("addFriendInput").value.trim();
+      if (!friendUsername || friendUsername === currentUser.getUsername()) return;
 
-        const userQuery = new Parse.Query(Parse.User);
-        userQuery.equalTo("username", username);
-        const user = await userQuery.first();
+      const User = Parse.User;
+      const userQuery = new Parse.Query(User);
+      userQuery.equalTo("username", friendUsername);
+      const exists = await userQuery.first();
 
-        if (user) {
-          const Friend = Parse.Object.extend("Friends");
-          const myFriend = new Friend();
-          myFriend.set("user", currentUser);
-          myFriend.set("friendName", username);
-          await myFriend.save();
+      if (exists) {
+        const FriendList = Parse.Object.extend("FriendList");
 
-          const theirFriend = new Friend();
-          theirFriend.set("user", user);
-          theirFriend.set("friendName", currentUser.getUsername());
-          await theirFriend.save();
+        const myFriend = new FriendList();
+        myFriend.set("owner", currentUser.getUsername());
+        myFriend.set("friend", friendUsername);
+        await myFriend.save();
 
-          e.target.value = "";
-          loadFriends();
-        } else {
-          alert("User not found");
-        }
+        const theirFriend = new FriendList();
+        theirFriend.set("owner", friendUsername);
+        theirFriend.set("friend", currentUser.getUsername());
+        await theirFriend.save();
+
+        document.getElementById("addFriendInput").value = "";
+        loadFriends();
+      } else {
+        alert("User not found.");
       }
     }
 
@@ -233,11 +232,12 @@
 
       const subscription = query.subscribe();
       subscription.on("create", msg => {
+        const messagesDiv = document.getElementById("messages");
         const div = document.createElement("div");
         div.className = "message " + (msg.get("sender") === currentUser.getUsername() ? "me" : "other");
         div.textContent = msg.get("text");
-        document.getElementById("messages").appendChild(div);
-        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+        messagesDiv.appendChild(div);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
       });
     }
 
