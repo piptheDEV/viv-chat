@@ -1,44 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Viv Chat</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fire Chat</title>
 <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
 <style>
     body {
         margin: 0;
         font-family: Arial, sans-serif;
         background: black;
-        color: white;
-        height: 100vh;
         overflow: hidden;
     }
-    #particles-js {
+    canvas#bg {
         position: fixed;
-        width: 100%;
-        height: 100%;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
         z-index: -1;
     }
     .container {
         display: flex;
         height: 100vh;
+        color: white;
     }
-    .sidebar {
-        width: 250px;
-        background: rgba(0, 0, 0, 0.8);
+    .friends-panel {
+        width: 25%;
+        background: rgba(20, 20, 20, 0.9);
         padding: 10px;
         overflow-y: auto;
-        transition: transform 0.3s ease-in-out;
     }
-    .sidebar.hidden {
-        transform: translateX(-100%);
+    .friends-panel h2 {
+        color: orange;
+        margin-top: 0;
     }
-    .chat-area {
+    .friend {
+        padding: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        cursor: pointer;
+    }
+    .chat-section {
         flex: 1;
         display: flex;
         flex-direction: column;
-        background: rgba(20, 20, 20, 0.9);
+        background: rgba(0,0,0,0.7);
+    }
+    .chat-header {
+        padding: 10px;
+        background: orange;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
     }
     .messages {
         flex: 1;
@@ -47,174 +58,193 @@
     }
     .message {
         margin: 5px 0;
-        padding: 8px;
-        border-radius: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
         max-width: 70%;
+        clear: both;
     }
-    .my-message {
-        background: #00bfff;
-        align-self: flex-end;
+    .me {
+        background: orange;
+        float: right;
     }
-    .other-message {
-        background: #444;
-        align-self: flex-start;
+    .other {
+        background: #333;
+        float: left;
     }
-    .input-area {
+    .chat-input {
         display: flex;
-        padding: 10px;
-        background: black;
     }
-    .input-area input {
+    .chat-input input {
         flex: 1;
         padding: 10px;
         border: none;
-        border-radius: 5px;
     }
-    .input-area button {
-        margin-left: 10px;
+    .chat-input button {
         padding: 10px;
-        background: #00bfff;
+        background: orange;
         border: none;
-        border-radius: 5px;
         cursor: pointer;
-    }
-    .toggle-sidebar {
-        display: none;
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background: #00bfff;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 2;
     }
     @media (max-width: 768px) {
-        .sidebar {
-            position: absolute;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
-        .toggle-sidebar {
-            display: block;
-        }
+        .friends-panel { width: 35%; }
     }
 </style>
 </head>
 <body>
 
-<div id="particles-js"></div>
-
-<div class="toggle-sidebar">☰</div>
+<canvas id="bg"></canvas>
 
 <div class="container">
-    <div class="sidebar hidden" id="sidebar">
-        <h3>Online Friends</h3>
-        <ul id="friends-list"></ul>
-        <button onclick="loadGlobalChat()">🌍 Global Chat</button>
+    <div class="friends-panel">
+        <h2>Friends</h2>
+        <div id="friendsList">Loading...</div>
+        <button id="globalChatBtn" style="width:100%;margin-top:10px;background:orange;color:black;padding:8px;border:none;">Global Chat</button>
     </div>
-
-    <div class="chat-area">
+    <div class="chat-section">
+        <div class="chat-header" id="chatHeader">Global Chat</div>
         <div class="messages" id="messages"></div>
-        <div class="input-area">
+        <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
+            <button id="sendBtn">Send</button>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
 <script>
-    // Init Parse
-    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-    Parse.serverURL = "https://parseapi.back4app.com/";
+// Parse Init
+Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+Parse.serverURL = "https://parseapi.back4app.com/";
 
-    const currentUser = localStorage.getItem("username");
-    if (!currentUser) {
-        window.location.href = "index.html";
+// Login check
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+    window.location.href = "login.html";
+}
+
+// Add user to OnlineUsers if not already
+(async function(){
+    const OnlineUsers = Parse.Object.extend("OnlineUsers");
+    const query = new Parse.Query(OnlineUsers);
+    query.equalTo("username", currentUser.username);
+    const res = await query.first();
+    if (!res) {
+        const userObj = new OnlineUsers();
+        userObj.set("username", currentUser.username);
+        await userObj.save();
     }
+    loadFriends();
+})();
 
-    // Add user to OnlineUsers class
-    async function addUserOnline() {
-        const OnlineUsers = Parse.Object.extend("OnlineUsers");
-        const query = new Parse.Query(OnlineUsers);
-        query.equalTo("username", currentUser);
-        const exists = await query.first();
-        if (!exists) {
-            const userObj = new OnlineUsers();
-            userObj.set("username", currentUser);
-            await userObj.save();
+let currentChat = "global";
+
+async function loadFriends(){
+    const OnlineUsers = Parse.Object.extend("OnlineUsers");
+    const query = new Parse.Query(OnlineUsers);
+    query.notEqualTo("username", currentUser.username);
+    const res = await query.find();
+    const friendsList = document.getElementById("friendsList");
+    friendsList.innerHTML = "";
+    if (res.length === 0) {
+        friendsList.innerHTML = "No other users online.";
+        return;
+    }
+    res.forEach(u=>{
+        const div = document.createElement("div");
+        div.className = "friend";
+        div.textContent = u.get("username");
+        div.onclick = ()=>{
+            currentChat = u.get("username");
+            document.getElementById("chatHeader").textContent = "Chat with " + currentChat;
+            loadMessages();
         }
-    }
-
-    // Load online users
-    async function loadOnlineUsers() {
-        const query = new Parse.Query("OnlineUsers");
-        const results = await query.find();
-        const friendsList = document.getElementById("friends-list");
-        friendsList.innerHTML = "";
-        results.forEach(user => {
-            if (user.get("username") !== currentUser) {
-                let li = document.createElement("li");
-                li.textContent = user.get("username");
-                li.onclick = () => startPrivateChat(user.get("username"));
-                friendsList.appendChild(li);
-            }
-        });
-    }
-
-    // Global chat load
-    async function loadGlobalChat() {
-        const query = new Parse.Query("Messages");
-        query.ascending("createdAt");
-        const results = await query.find();
-        const messagesDiv = document.getElementById("messages");
-        messagesDiv.innerHTML = "";
-        results.forEach(msg => {
-            const div = document.createElement("div");
-            div.className = "message " + (msg.get("sender") === currentUser ? "my-message" : "other-message");
-            div.textContent = msg.get("sender") + ": " + msg.get("text");
-            messagesDiv.appendChild(div);
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // Send message
-    async function sendMessage() {
-        const text = document.getElementById("messageInput").value;
-        if (!text.trim()) return;
-        const Messages = Parse.Object.extend("Messages");
-        const msg = new Messages();
-        msg.set("sender", currentUser);
-        msg.set("text", text);
-        await msg.save();
-        document.getElementById("messageInput").value = "";
-        loadGlobalChat();
-    }
-
-    // Sidebar toggle for mobile
-    document.querySelector(".toggle-sidebar").addEventListener("click", () => {
-        document.getElementById("sidebar").classList.toggle("hidden");
+        friendsList.appendChild(div);
     });
+}
 
-    // Floating particles
-    particlesJS("particles-js", {
-        particles: {
-            number: { value: 50 },
-            size: { value: 3 },
-            move: { speed: 1 },
-            line_linked: { enable: true, opacity: 0.5 }
-        }
+document.getElementById("globalChatBtn").onclick = ()=>{
+    currentChat = "global";
+    document.getElementById("chatHeader").textContent = "Global Chat";
+    loadMessages();
+}
+
+document.getElementById("sendBtn").onclick = sendMessage;
+
+async function sendMessage(){
+    const text = document.getElementById("messageInput").value.trim();
+    if (!text) return;
+    const Message = Parse.Object.extend("Messages");
+    const msg = new Message();
+    msg.set("sender", currentUser.username);
+    msg.set("receiver", currentChat);
+    msg.set("text", text);
+    await msg.save();
+    document.getElementById("messageInput").value = "";
+    loadMessages();
+}
+
+async function loadMessages(){
+    const Message = Parse.Object.extend("Messages");
+    const query = new Parse.Query(Message);
+    if (currentChat === "global") {
+        query.equalTo("receiver", "global");
+    } else {
+        query.containedIn("receiver", [currentChat, currentUser.username]);
+        query.containedIn("sender", [currentChat, currentUser.username]);
+    }
+    query.ascending("createdAt");
+    const msgs = await query.find();
+    const messagesDiv = document.getElementById("messages");
+    messagesDiv.innerHTML = "";
+    msgs.forEach(m=>{
+        const div = document.createElement("div");
+        div.className = "message " + (m.get("sender") === currentUser.username ? "me" : "other");
+        div.textContent = m.get("text");
+        messagesDiv.appendChild(div);
     });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-    // Init
-    addUserOnline();
-    loadOnlineUsers();
-    loadGlobalChat();
-    setInterval(loadOnlineUsers, 5000);
-    setInterval(loadGlobalChat, 3000);
+setInterval(loadMessages, 2000);
+loadMessages();
+
+// Background animation
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+let particles = [];
+function resize(){canvas.width = innerWidth;canvas.height = innerHeight;}
+resize();
+window.addEventListener("resize", resize);
+
+class Particle {
+    constructor(){
+        this.x = Math.random()*canvas.width;
+        this.y = Math.random()*canvas.height;
+        this.r = Math.random()*3+1;
+        this.dx = (Math.random()-0.5)*0.5;
+        this.dy = (Math.random()-0.5)*0.5;
+    }
+    draw(){
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+        ctx.fillStyle = "orange";
+        ctx.fill();
+    }
+    update(){
+        this.x += this.dx;
+        this.y += this.dy;
+        if(this.x<0||this.x>canvas.width) this.dx*=-1;
+        if(this.y<0||this.y>canvas.height) this.dy*=-1;
+        this.draw();
+    }
+}
+for(let i=0;i<100;i++) particles.push(new Particle());
+
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>p.update());
+    requestAnimationFrame(animate);
+}
+animate();
 </script>
-
 </body>
-    </html>
+                                                                                                                                            </html>
