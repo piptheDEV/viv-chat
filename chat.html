@@ -1,234 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Viv Chat</title>
-<style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #0d0d0d;
-        color: white;
-        height: 100vh;
-        display: flex;
-        overflow: hidden;
-    }
-    #particles-js {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-    }
-    .sidebar {
-        width: 250px;
-        background: rgba(20, 20, 20, 0.9);
-        padding: 15px;
-        box-sizing: border-box;
-        overflow-y: auto;
-    }
-    .sidebar h2 {
-        text-align: center;
-        font-size: 18px;
-        margin-bottom: 15px;
-    }
-    .user {
-        padding: 10px;
-        background: rgba(40, 40, 40, 0.7);
-        margin-bottom: 8px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-    .user:hover {
-        background: rgba(60, 60, 60, 0.9);
-    }
-    .chat-container {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: rgba(15, 15, 15, 0.85);
-    }
-    .chat-header {
-        padding: 15px;
-        text-align: center;
-        background: rgba(25, 25, 25, 0.95);
-        font-size: 20px;
-        position: relative;
-    }
-    .chat-header button {
-        position: absolute;
-        right: 10px;
-        top: 8px;
-        padding: 8px 12px;
-        background: #ff6600;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    .messages {
-        flex: 1;
-        padding: 10px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-    }
-    .message {
-        max-width: 70%;
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 8px;
-        background: rgba(50, 50, 50, 0.8);
-        word-wrap: break-word;
-    }
-    .me {
-        align-self: flex-end;
-        background: #1e90ff;
-    }
-    .other {
-        align-self: flex-start;
-        background: #333;
-    }
-    .input-container {
-        display: flex;
-        padding: 10px;
-        background: rgba(25, 25, 25, 0.9);
-    }
-    .input-container input {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        outline: none;
-    }
-    .input-container button {
-        padding: 10px 15px;
-        margin-left: 8px;
-        background: #1e90ff;
-        border: none;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    @media (max-width: 768px) {
-        .sidebar {
-            display: none;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viv Chat</title>
+    <script src="https://unpkg.com/parse/dist/parse.min.js"></script>
+    <style>
+        /* Background canvas for particles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            background: #0f0f0f;
+            color: white;
         }
-    }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/parse/dist/parse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+        canvas#bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+        /* Chat container */
+        .chat-container {
+            max-width: 500px;
+            height: 100vh;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+        }
+        header {
+            background: linear-gradient(90deg, #ff512f, #dd2476);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+        }
+        #globalChatBtn {
+            background: white;
+            color: black;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        #globalChatBtn:hover {
+            background: #ddd;
+        }
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .my-message {
+            background: linear-gradient(90deg, #ff512f, #dd2476);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 5px;
+            align-self: flex-end;
+            max-width: 80%;
+        }
+        .other-message {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 5px;
+            align-self: flex-start;
+            max-width: 80%;
+        }
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+        }
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        #sendBtn {
+            background: linear-gradient(90deg, #ff512f, #dd2476);
+            border: none;
+            padding: 10px 15px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        #sendBtn:hover {
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
-<div id="particles-js"></div>
+    <canvas id="bg"></canvas>
 
-<div class="sidebar">
-    <h2>Online Users</h2>
-    <div id="userList"></div>
-</div>
+    <div class="chat-container">
+        <header>
+            <span>Viv Chat</span>
+            <button id="globalChatBtn">🌍 Global Chat</button>
+        </header>
 
-<div class="chat-container">
-    <div class="chat-header">
-        Global Chat
-        <button id="globalBtn">Go to Global Chat</button>
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button id="sendBtn">Send</button>
+        </div>
     </div>
-    <div class="messages" id="messages"></div>
-    <div class="input-container">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendBtn">Send</button>
-    </div>
-</div>
 
 <script>
-    Parse.initialize("YOUR_APP_ID", "YOUR_JS_KEY");
-    Parse.serverURL = "https://parseapi.back4app.com/";
+/* ==== INIT PARSE ==== */
+Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+Parse.serverURL = "https://parseapi.back4app.com/";
+Parse.User.enableUnsafeCurrentUser();
 
-    let currentUser = Parse.User.current();
-    let currentChatUser = "GLOBAL_CHAT";
-
-    if (!currentUser) {
-        window.location.href = "index.html";
+/* ==== SESSION FIX ==== */
+async function restoreSession() {
+    const token = localStorage.getItem("sessionToken");
+    if (!token) {
+        window.location.href = "login.html";
+        return;
     }
 
-    async function loadUsers() {
-        const query = new Parse.Query(Parse.User);
-        query.notEqualTo("objectId", currentUser.id);
-        const results = await query.find();
-        const userList = document.getElementById("userList");
-        userList.innerHTML = "";
-        results.forEach(user => {
-            const div = document.createElement("div");
-            div.className = "user";
-            div.textContent = user.get("username");
-            div.onclick = () => {
-                currentChatUser = user.get("username");
-                document.querySelector(".chat-header").firstChild.textContent = "Chat with " + currentChatUser;
-                loadMessages();
-            };
-            userList.appendChild(div);
-        });
+    try {
+        await Parse.User.become(token);
+        console.log("Session restored:", Parse.User.current().getUsername());
+    } catch (err) {
+        console.error("Session invalid:", err);
+        localStorage.removeItem("sessionToken");
+        window.location.href = "login.html";
     }
+}
+restoreSession();
 
-    async function loadMessages() {
-        const Chat = Parse.Object.extend("Messages");
-        const query = new Parse.Query(Chat);
+/* ==== CHAT FUNCTIONS ==== */
+const chatBox = document.getElementById("chatBox");
+const messageInput = document.getElementById("messageInput");
 
-        if (currentChatUser === "GLOBAL_CHAT") {
-            query.equalTo("receiver", "GLOBAL_CHAT");
-        } else {
-            query.containedIn("sender", [currentUser.get("username"), currentChatUser]);
-            query.containedIn("receiver", [currentUser.get("username"), currentChatUser]);
-        }
+async function loadMessages() {
+    const Message = Parse.Object.extend("GlobalMessages");
+    const query = new Parse.Query(Message);
+    query.ascending("createdAt");
+    const results = await query.find();
 
-        query.ascending("createdAt");
-        const results = await query.find();
-        const messagesDiv = document.getElementById("messages");
-        messagesDiv.innerHTML = "";
-        results.forEach(msg => {
-            const div = document.createElement("div");
-            div.className = "message " + (msg.get("sender") === currentUser.get("username") ? "me" : "other");
-            div.textContent = msg.get("text");
-            messagesDiv.appendChild(div);
-        });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
+    chatBox.innerHTML = "";
+    const currentUser = Parse.User.current()?.getUsername();
 
-    async function sendMessage() {
-        const text = document.getElementById("messageInput").value.trim();
-        if (!text) return;
-        const Chat = Parse.Object.extend("Messages");
-        const msg = new Chat();
-        msg.set("sender", currentUser.get("username"));
-        msg.set("receiver", currentChatUser);
-        msg.set("text", text);
-        await msg.save();
-        document.getElementById("messageInput").value = "";
-        loadMessages();
-    }
-
-    document.getElementById("sendBtn").onclick = sendMessage;
-    document.getElementById("globalBtn").onclick = () => {
-        currentChatUser = "GLOBAL_CHAT";
-        document.querySelector(".chat-header").firstChild.textContent = "Global Chat";
-        loadMessages();
-    };
-
-    setInterval(loadMessages, 2000);
-    loadUsers();
-    loadMessages();
-
-    // Floating particles background
-    particlesJS("particles-js", {
-        "particles": {
-            "number": { "value": 50 },
-            "size": { "value": 3 },
-            "move": { "speed": 1 },
-            "line_linked": { "enable": true, "color": "#ffffff" }
-        }
+    results.forEach(msg => {
+        const div = document.createElement("div");
+        const sender = msg.get("sender");
+        div.textContent = `${sender}: ${msg.get("text")}`;
+        div.classList.add(sender === currentUser ? "my-message" : "other-message");
+        chatBox.appendChild(div);
     });
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const Message = Parse.Object.extend("GlobalMessages");
+    const msg = new Message();
+    msg.set("sender", Parse.User.current().getUsername());
+    msg.set("text", text);
+    await msg.save();
+
+    messageInput.value = "";
+    loadMessages();
+}
+
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+});
+
+setInterval(loadMessages, 3000);
+loadMessages();
+
+/* ==== PARTICLE BACKGROUND ==== */
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+let particles = [];
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function createParticles() {
+    particles = [];
+    for (let i = 0; i < 50; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 3 + 1,
+            dx: (Math.random() - 0.5) * 0.5,
+            dy: (Math.random() - 0.5) * 0.5
+        });
+    }
+}
+createParticles();
+
+function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+    });
+    requestAnimationFrame(drawParticles);
+}
+drawParticles();
 </script>
 </body>
     </html>
