@@ -6,64 +6,37 @@
   <title>Viv Chat - Login</title>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden;
-      background: #121212;
+      background: url('https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0') no-repeat center center/cover;
       color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-
-    .background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(-45deg, #00ffe1, #0d0d0d, #333, #00ccba);
-      background-size: 400% 400%;
-      animation: gradientMove 15s ease infinite;
-      z-index: -1;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
     .container {
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.7);
       padding: 40px;
       border-radius: 12px;
-      box-shadow: 0 0 25px rgba(0, 255, 225, 0.4);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
       width: 320px;
-      margin: 100px auto;
       animation: fadeIn 1s ease-in-out;
     }
-
     h2 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
       color: #00ffe1;
     }
-
-    .tagline {
-      text-align: center;
-      font-size: 0.9em;
-      color: #ccc;
-      margin-bottom: 20px;
-    }
-
     input {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
       border: none;
       border-radius: 6px;
-      background-color: #2a2a2a;
+      background-color: #333;
       color: white;
     }
-
     button {
       width: 100%;
       padding: 10px;
@@ -75,17 +48,14 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-
     button:hover {
       background-color: #00ccba;
     }
-
     p {
       text-align: center;
       font-size: 0.9em;
       margin-top: 10px;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
@@ -103,7 +73,7 @@
         await Parse.User.logIn(username, password);
         window.location.href = "chat.html";
       } catch (error) {
-        alert("Login failed: " + error.message);
+        alert("Error: " + error.message);
       }
     }
 
@@ -117,16 +87,14 @@
         await user.signUp();
         window.location.href = "chat.html";
       } catch (error) {
-        alert("Sign up failed: " + error.message);
+        alert("Error: " + error.message);
       }
     }
   </script>
 </head>
 <body>
-  <div class="background"></div>
   <div class="container">
-    <h2>Viv Chat</h2>
-    <div class="tagline">Chat freely. Securely. Simply.</div>
+    <h2>Welcome to Viv Chat</h2>
     <input type="text" id="username" placeholder="Username" />
     <input type="password" id="password" placeholder="Password" />
     <button onclick="login()">Login</button>
@@ -134,4 +102,4 @@
     <button onclick="signUp()">Sign Up</button>
   </div>
 </body>
-  </html>
+</html>
