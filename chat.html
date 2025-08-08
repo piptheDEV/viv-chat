@@ -3,242 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viv Chat</title>
-    <script src="https://unpkg.com/parse/dist/parse.min.js"></script>
+    <title>Viv Chat - Global Chat</title>
+    <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
     <style>
-        /* Background canvas for particles */
-        body, html {
+        body {
             margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Poppins', sans-serif;
-            background: #0f0f0f;
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
             color: white;
-        }
-        canvas#bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-        /* Chat container */
-        .chat-container {
-            max-width: 500px;
-            height: 100vh;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 10px;
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
         }
+
         header {
-            background: linear-gradient(90deg, #ff512f, #dd2476);
             padding: 15px;
+            background: rgba(0,0,0,0.8);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: white;
+            z-index: 10;
         }
-        #globalChatBtn {
-            background: white;
-            color: black;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 20px;
+
+        header h1 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(20,20,20,0.9);
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .user {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
         }
-        #globalChatBtn:hover {
-            background: #ddd;
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            position: relative;
+            z-index: 1;
         }
-        .chat-box {
+
+        .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 20px;
         }
-        .my-message {
-            background: linear-gradient(90deg, #ff512f, #dd2476);
-            padding: 10px;
-            border-radius: 10px;
-            margin: 5px;
-            align-self: flex-end;
-            max-width: 80%;
+
+        .message {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
         }
-        .other-message {
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 10px;
-            margin: 5px;
-            align-self: flex-start;
-            max-width: 80%;
+
+        .me {
+            background: #ff4500;
+            margin-left: auto;
+            text-align: right;
         }
+
+        .other {
+            background: #222;
+            margin-right: auto;
+        }
+
         .input-area {
             display: flex;
             padding: 10px;
-            background: rgba(255,255,255,0.05);
+            background: rgba(0,0,0,0.8);
         }
-        #messageInput {
+
+        .input-area input {
             flex: 1;
             padding: 10px;
             border: none;
             outline: none;
-            border-radius: 5px;
-            background: rgba(255,255,255,0.1);
-            color: white;
+            border-radius: 20px;
         }
-        #sendBtn {
-            background: linear-gradient(90deg, #ff512f, #dd2476);
-            border: none;
+
+        .input-area button {
             padding: 10px 15px;
-            margin-left: 10px;
-            border-radius: 5px;
-            cursor: pointer;
+            border: none;
+            background: #ff4500;
             color: white;
-            font-weight: bold;
-            transition: transform 0.2s;
+            border-radius: 20px;
+            margin-left: 10px;
+            cursor: pointer;
         }
-        #sendBtn:hover {
-            transform: scale(1.05);
+
+        /* Particle background */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <canvas id="bg"></canvas>
 
-    <div class="chat-container">
-        <header>
-            <span>Viv Chat</span>
-            <button id="globalChatBtn">🌍 Global Chat</button>
-        </header>
+<div id="particles-js"></div>
 
-        <div class="chat-box" id="chatBox"></div>
+<header>
+    <h1>🔥 Viv Chat</h1>
+    <button onclick="logout()">Logout</button>
+</header>
 
-        <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Type your message...">
-            <button id="sendBtn">Send</button>
-        </div>
+<div class="container">
+    <div class="sidebar">
+        <h2>Users</h2>
+        <div id="userList"></div>
     </div>
 
+    <div class="chat-area">
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
 <script>
-/* ==== INIT PARSE ==== */
-Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-Parse.serverURL = "https://parseapi.back4app.com/";
-Parse.User.enableUnsafeCurrentUser();
+    /* Init Parse */
+    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+    Parse.serverURL = "https://parseapi.back4app.com/";
 
-/* ==== SESSION FIX ==== */
-async function restoreSession() {
-    const token = localStorage.getItem("sessionToken");
-    if (!token) {
-        window.location.href = "login.html";
-        return;
+    let currentUser = Parse.User.current();
+    if (!currentUser) {
+        window.location.href = "index.html"; // redirect if not logged in
     }
 
-    try {
-        await Parse.User.become(token);
-        console.log("Session restored:", Parse.User.current().getUsername());
-    } catch (err) {
-        console.error("Session invalid:", err);
-        localStorage.removeItem("sessionToken");
-        window.location.href = "login.html";
-    }
-}
-restoreSession();
-
-/* ==== CHAT FUNCTIONS ==== */
-const chatBox = document.getElementById("chatBox");
-const messageInput = document.getElementById("messageInput");
-
-async function loadMessages() {
-    const Message = Parse.Object.extend("GlobalMessages");
-    const query = new Parse.Query(Message);
-    query.ascending("createdAt");
-    const results = await query.find();
-
-    chatBox.innerHTML = "";
-    const currentUser = Parse.User.current()?.getUsername();
-
-    results.forEach(msg => {
-        const div = document.createElement("div");
-        const sender = msg.get("sender");
-        div.textContent = `${sender}: ${msg.get("text")}`;
-        div.classList.add(sender === currentUser ? "my-message" : "other-message");
-        chatBox.appendChild(div);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-async function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text) return;
-
-    const Message = Parse.Object.extend("GlobalMessages");
-    const msg = new Message();
-    msg.set("sender", Parse.User.current().getUsername());
-    msg.set("text", text);
-    await msg.save();
-
-    messageInput.value = "";
-    loadMessages();
-}
-
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
-messageInput.addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
-});
-
-setInterval(loadMessages, 3000);
-loadMessages();
-
-/* ==== PARTICLE BACKGROUND ==== */
-const canvas = document.getElementById("bg");
-const ctx = canvas.getContext("2d");
-let particles = [];
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-function createParticles() {
-    particles = [];
-    for (let i = 0; i < 50; i++) {
-        particles.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            r: Math.random() * 3 + 1,
-            dx: (Math.random() - 0.5) * 0.5,
-            dy: (Math.random() - 0.5) * 0.5
+    // Load users
+    async function loadUsers() {
+        const query = new Parse.Query(Parse.User);
+        query.notEqualTo("username", currentUser.get("username"));
+        const results = await query.find();
+        const userList = document.getElementById("userList");
+        userList.innerHTML = "";
+        results.forEach(user => {
+            let div = document.createElement("div");
+            div.className = "user";
+            div.textContent = user.get("username");
+            userList.appendChild(div);
         });
     }
-}
-createParticles();
 
-function drawParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
+    // Load messages
+    async function loadMessages() {
+        const Message = Parse.Object.extend("Message");
+        const query = new Parse.Query(Message);
+        query.ascending("createdAt");
+        const results = await query.find();
 
-        p.x += p.dx;
-        p.y += p.dy;
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = "";
 
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        results.forEach(msg => {
+            let div = document.createElement("div");
+            div.className = "message " + (msg.get("sender") === currentUser.get("username") ? "me" : "other");
+            div.textContent = msg.get("sender") + ": " + msg.get("text");
+            messagesDiv.appendChild(div);
+        });
+
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // Send message
+    async function sendMessage() {
+        let text = document.getElementById("messageInput").value.trim();
+        if (text === "") return;
+
+        const Message = Parse.Object.extend("Message");
+        const message = new Message();
+        message.set("sender", currentUser.get("username"));
+        message.set("text", text);
+        await message.save();
+
+        document.getElementById("messageInput").value = "";
+        loadMessages();
+    }
+
+    function logout() {
+        Parse.User.logOut();
+        window.location.href = "index.html";
+    }
+
+    // Initial load
+    loadUsers();
+    loadMessages();
+    setInterval(loadMessages, 2000);
+
+    /* Particle Background */
+    particlesJS("particles-js", {
+        particles: {
+            number: { value: 60 },
+            color: { value: "#ff4500" },
+            shape: { type: "circle" },
+            opacity: { value: 0.5 },
+            size: { value: 3 },
+            move: { enable: true, speed: 2 }
+        }
     });
-    requestAnimationFrame(drawParticles);
-}
-drawParticles();
 </script>
 </body>
 </html>
