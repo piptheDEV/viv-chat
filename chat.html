@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Viv Chat</title>
+  <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -13,217 +14,178 @@
       display: flex;
       height: 100vh;
     }
-    /* Side panel */
-    .sidebar {
-      width: 250px;
-      background-color: #1f1f1f;
-      border-right: 1px solid #333;
+
+    /* Friends Sidebar */
+    #friends {
+      width: 220px;
+      background-color: #1e1e1e;
+      padding: 10px;
+      border-right: 2px solid #222;
       display: flex;
       flex-direction: column;
     }
-    .sidebar-header {
-      padding: 15px;
-      font-size: 1.2em;
-      border-bottom: 1px solid #333;
+    #friends h2 {
+      margin: 5px 0;
+      font-size: 18px;
       text-align: center;
-      background-color: #00ffe1;
-      color: black;
     }
-    .friend-list {
+    #friends-list {
       flex: 1;
       overflow-y: auto;
     }
     .friend {
-      padding: 12px;
+      padding: 8px;
+      background: #2a2a2a;
+      margin: 5px 0;
+      border-radius: 6px;
       cursor: pointer;
-      border-bottom: 1px solid #333;
-      transition: background 0.3s;
     }
     .friend:hover {
-      background-color: #2a2a2a;
+      background: #333;
     }
-    .add-friend {
-      padding: 10px;
-      display: flex;
-      border-top: 1px solid #333;
-    }
-    .add-friend input {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 4px;
-      background-color: #333;
-      color: white;
-    }
-    .add-friend button {
-      padding: 8px;
-      margin-left: 5px;
-      background-color: #00ffe1;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+
     /* Chat area */
-    .chat-area {
+    #chat {
       flex: 1;
       display: flex;
       flex-direction: column;
     }
-    .chat-header {
-      padding: 15px;
-      border-bottom: 1px solid #333;
-      background-color: #1f1f1f;
-      font-weight: bold;
-    }
-    .messages {
+
+    #messages {
       flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-    }
-    .message {
-      margin: 8px 0;
       padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      padding: 8px;
+      margin: 5px;
       border-radius: 8px;
       max-width: 60%;
+      word-wrap: break-word;
     }
-    .me {
+
+    .mine {
       background-color: #00ffe1;
       color: black;
-      align-self: flex-end;
+      margin-left: auto;
+      text-align: right;
     }
-    .them {
-      background-color: #2a2a2a;
-      align-self: flex-start;
-    }
-    .message-input {
-      display: flex;
-      padding: 10px;
-      border-top: 1px solid #333;
-      background-color: #1f1f1f;
-    }
-    .message-input input {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 4px;
+
+    .theirs {
       background-color: #333;
       color: white;
+      margin-right: auto;
+      text-align: left;
     }
-    .message-input button {
-      padding: 8px 15px;
-      margin-left: 5px;
-      background-color: #00ffe1;
+
+    /* Input box */
+    #input-area {
+      display: flex;
+      border-top: 2px solid #222;
+      background: #1e1e1e;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
       border: none;
-      border-radius: 4px;
+      background: #1e1e1e;
+      color: white;
+    }
+    #send-btn {
+      padding: 10px 20px;
+      border: none;
+      background-color: #00ffe1;
+      color: black;
       cursor: pointer;
     }
+    #send-btn:hover {
+      background-color: #00c9b0;
+    }
   </style>
-  <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
 </head>
 <body>
-  <div class="sidebar">
-    <div class="sidebar-header">Friends</div>
-    <div class="friend-list" id="friendList"></div>
-    <div class="add-friend">
-      <input type="text" id="friendUsername" placeholder="Add friend..." />
-      <button onclick="addFriend()">+</button>
+
+  <!-- Friends Sidebar -->
+  <div id="friends">
+    <h2>Friends</h2>
+    <div id="friends-list">
+      <!-- Friends will appear here -->
     </div>
+    <input type="text" id="add-friend-input" placeholder="Add friend" />
+    <button id="add-friend-btn">Add</button>
   </div>
 
-  <div class="chat-area">
-    <div class="chat-header" id="chatHeader">Select a friend</div>
-    <div class="messages" id="messages"></div>
-    <div class="message-input">
-      <input type="text" id="messageInput" placeholder="Type a message..." />
-      <button onclick="sendMessage()">Send</button>
+  <!-- Chat Area -->
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="message-input" placeholder="Type your message..." />
+      <button id="send-btn">Send</button>
     </div>
   </div>
 
   <script>
-    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-    Parse.serverURL = "https://parseapi.back4app.com/";
+    // Parse Init
+    Parse.initialize("YOUR_APP_ID", "YOUR_JS_KEY");
+    Parse.serverURL = "https://parseapi.back4app.com";
 
-    let currentUser = Parse.User.current();
-    let selectedFriend = null;
-
-    async function loadFriends() {
-      const Friend = Parse.Object.extend("Friends");
-      const query = new Parse.Query(Friend);
-      query.equalTo("owner", currentUser.getUsername());
-      const results = await query.find();
-      const friendList = document.getElementById("friendList");
-      friendList.innerHTML = "";
-      results.forEach(f => {
-        const friendName = f.get("friendName");
-        const div = document.createElement("div");
-        div.classList.add("friend");
-        div.textContent = friendName;
-        div.onclick = () => selectFriend(friendName);
-        friendList.appendChild(div);
-      });
+    const currentUser = Parse.User.current();
+    if (!currentUser) {
+      window.location.href = "index.html"; // back to login if not logged in
     }
 
-    async function addFriend() {
-      const username = document.getElementById("friendUsername").value.trim();
-      if (!username) return;
-      const Friend = Parse.Object.extend("Friends");
-      const newFriend = new Friend();
-      newFriend.set("owner", currentUser.getUsername());
-      newFriend.set("friendName", username);
-      await newFriend.save();
-      document.getElementById("friendUsername").value = "";
-      loadFriends();
-    }
+    const username = currentUser.get("username");
 
-    function selectFriend(friendName) {
-      selectedFriend = friendName;
-      document.getElementById("chatHeader").textContent = friendName;
-      loadMessages();
-    }
+    // Chat Class
+    const Message = Parse.Object.extend("Message");
 
-    async function loadMessages() {
-      const Message = Parse.Object.extend("Messages");
-      const query = new Parse.Query(Message);
-      query.containedIn("sender", [currentUser.getUsername(), selectedFriend]);
-      query.containedIn("receiver", [currentUser.getUsername(), selectedFriend]);
-      query.ascending("createdAt");
-      const results = await query.find();
-      const msgContainer = document.getElementById("messages");
-      msgContainer.innerHTML = "";
-      results.forEach(m => {
-        const div = document.createElement("div");
-        div.classList.add("message");
-        if (m.get("sender") === currentUser.getUsername()) {
-          div.classList.add("me");
-        } else {
-          div.classList.add("them");
-        }
-        div.textContent = m.get("text");
-        msgContainer.appendChild(div);
-      });
-      msgContainer.scrollTop = msgContainer.scrollHeight;
+    function renderMessage(message) {
+      const isMine = message.get("username") === username;
+      const msgDiv = document.createElement("div");
+      msgDiv.className = isMine ? "message mine" : "message theirs";
+      msgDiv.innerHTML = `<strong>${message.get("username")}</strong>: ${message.get("text")}`;
+      document.getElementById("messages").appendChild(msgDiv);
+      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
     }
 
     async function sendMessage() {
-      if (!selectedFriend) return;
-      const text = document.getElementById("messageInput").value.trim();
+      const text = document.getElementById("message-input").value.trim();
       if (!text) return;
-      const Message = Parse.Object.extend("Messages");
       const msg = new Message();
-      msg.set("sender", currentUser.getUsername());
-      msg.set("receiver", selectedFriend);
+      msg.set("username", username);
       msg.set("text", text);
       await msg.save();
-      document.getElementById("messageInput").value = "";
-      loadMessages();
+      document.getElementById("message-input").value = "";
     }
 
-    // Init
-    if (!currentUser) {
-      window.location.href = "index.html";
-    } else {
-      loadFriends();
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
+    document.getElementById("message-input").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // Live Query setup
+    async function setupLiveQuery() {
+      const query = new Parse.Query(Message);
+      query.ascending("createdAt");
+      const results = await query.find();
+      results.forEach(renderMessage);
+
+      const liveQueryClient = new Parse.LiveQueryClient({
+        applicationId: "NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m",
+        serverURL: "wss://viv-chat.b4a.io", // Back4App Live Query server
+        javascriptKey: "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf"
+      });
+      liveQueryClient.open();
+
+      const subscription = liveQueryClient.subscribe(query);
+      subscription.on("create", (message) => renderMessage(message));
     }
+
+    setupLiveQuery();
   </script>
+
 </body>
 </html>
