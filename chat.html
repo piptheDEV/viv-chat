@@ -1,249 +1,171 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Viv Chat</title>
-  <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
-      display: flex;
-      height: 100vh;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 250px;
-      background: #1e1e1e;
-      display: flex;
-      flex-direction: column;
-      border-right: 2px solid #333;
-      padding: 10px;
-    }
-    .friend {
-      padding: 10px;
-      cursor: pointer;
-      border-bottom: 1px solid #333;
-    }
-    .friend:hover {
-      background: #333;
-    }
-    .add-friend {
-      margin-top: auto;
-      padding: 10px;
-    }
-    .add-friend input {
-      width: 100%;
-      padding: 5px;
-      margin-bottom: 5px;
-      border: none;
-      background: #222;
-      color: white;
-    }
-    .add-friend button {
-      width: 100%;
-      padding: 5px;
-      border: none;
-      background: #0d6efd;
-      color: white;
-      cursor: pointer;
-    }
-
-    /* Chat */
-    .chat {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-    }
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .message {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 5px;
-      max-width: 70%;
-    }
-    .me {
-      background: #0d6efd;
-      align-self: flex-end;
-    }
-    .other {
-      background: #333;
-      align-self: flex-start;
-    }
-    .input-box {
-      display: flex;
-      border-top: 2px solid #333;
-    }
-    .input-box input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: #1e1e1e;
-      color: white;
-    }
-    .input-box button {
-      padding: 10px;
-      border: none;
-      background: #0d6efd;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Viv Chat</title>
+    <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #121212;
+            color: white;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background: #1e1e1e;
+            padding: 10px;
+            border-right: 1px solid #333;
+        }
+        .sidebar h2 {
+            text-align: center;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .message {
+            max-width: 60%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+        .sent {
+            background: #4caf50;
+            align-self: flex-end;
+        }
+        .received {
+            background: #333;
+            align-self: flex-start;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background: #1e1e1e;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            margin-left: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h3>Friends</h3>
-    <div id="friendList"></div>
-
-    <div class="add-friend">
-      <input type="text" id="friendUsername" placeholder="Friend's username">
-      <button onclick="searchUser()">Add Friend</button>
+    <div class="sidebar">
+        <h2>Friends</h2>
+        <input type="text" id="friendName" placeholder="Add friend">
+        <button onclick="findFriend()">Add</button>
+        <div id="friendList"></div>
     </div>
-  </div>
-
-  <!-- Chat Section -->
-  <div class="chat">
-    <div class="messages" id="messages"></div>
-    <div class="input-box">
-      <input type="text" id="messageInput" placeholder="Type a message">
-      <button onclick="sendMessage()">Send</button>
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-  </div>
 
-<script>
-  // Back4App Keys
-  Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-  Parse.serverURL = "https://parseapi.back4app.com/";
+    <script>
+        // Initialize Parse
+        Parse.initialize("YOUR_APP_ID", "YOUR_JS_KEY");
+        Parse.serverURL = "https://parseapi.back4app.com/";
 
-  let currentUser = Parse.User.current();
-  let currentFriend = null;
+        let currentUser = Parse.User.current();
+        let friendUser = null;
 
-  if (!currentUser) {
-    window.location.href = "login.html"; // redirect if not logged in
-  }
-
-  // Load friends on sidebar
-  async function loadFriends() {
-    const friends = currentUser.get("friends") || [];
-    const friendListEl = document.getElementById("friendList");
-    friendListEl.innerHTML = "";
-
-    for (let friendId of friends) {
-      try {
-        const query = new Parse.Query(Parse.User);
-        const friend = await query.get(friendId);
-        const div = document.createElement("div");
-        div.className = "friend";
-        div.textContent = friend.get("username");
-        div.onclick = () => {
-          currentFriend = friend;
-          loadMessages();
-        };
-        friendListEl.appendChild(div);
-      } catch (err) {
-        console.error("Error loading friend:", err);
-      }
-    }
-  }
-
-  // Search and add friend
-  async function searchUser() {
-    const username = document.getElementById("friendUsername").value.trim();
-    if (!username) return;
-
-    try {
-      const query = new Parse.Query(Parse.User);
-      query.matches("username", `^${username}$`, "i"); // case-insensitive
-      const results = await query.find();
-
-      if (results.length > 0) {
-        const friend = results[0];
-        let friends = currentUser.get("friends") || [];
-        if (!friends.includes(friend.id)) {
-          friends.push(friend.id);
-          currentUser.set("friends", friends);
-          await currentUser.save();
-          alert("Friend added!");
-          loadFriends();
-        } else {
-          alert("Already friends!");
+        if (!currentUser) {
+            window.location.href = "login.html";
         }
-      } else {
-        alert("User not found!");
-      }
-    } catch (error) {
-      console.error("Error searching user:", error);
-    }
-  }
 
-  // Load messages between current user and current friend
-  async function loadMessages() {
-    if (!currentFriend) return;
-    const Message = Parse.Object.extend("Messages");
-    const query1 = new Parse.Query(Message);
-    query1.equalTo("sender", currentUser.id);
-    query1.equalTo("receiver", currentFriend.id);
+        async function findFriend() {
+            const friendName = document.getElementById("friendName").value.trim();
+            if (!friendName) return alert("Enter a username");
 
-    const query2 = new Parse.Query(Message);
-    query2.equalTo("sender", currentFriend.id);
-    query2.equalTo("receiver", currentUser.id);
+            const query = new Parse.Query(Parse.User);
+            query.equalTo("username", friendName);
+            const result = await query.first();
 
-    const mainQuery = Parse.Query.or(query1, query2);
-    mainQuery.ascending("createdAt");
+            if (!result) {
+                alert("User not found");
+                return;
+            }
 
-    try {
-      const results = await mainQuery.find();
-      const messagesEl = document.getElementById("messages");
-      messagesEl.innerHTML = "";
+            friendUser = result;
+            document.getElementById("friendList").innerHTML = `<p>${friendUser.get("username")}</p>`;
+            loadMessages();
+        }
 
-      results.forEach(msg => {
-        const div = document.createElement("div");
-        div.className = "message " + (msg.get("sender") === currentUser.id ? "me" : "other");
-        div.textContent = msg.get("text");
-        messagesEl.appendChild(div);
-      });
+        async function sendMessage() {
+            if (!friendUser) return alert("Select a friend first");
+            const text = document.getElementById("messageInput").value.trim();
+            if (!text) return;
 
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    }
-  }
+            const Message = Parse.Object.extend("Messages");
+            const msg = new Message();
+            msg.set("sender", currentUser.get("username"));
+            msg.set("receiver", friendUser.get("username"));
+            msg.set("text", text);
+            await msg.save();
 
-  // Send message
-  async function sendMessage() {
-    if (!currentFriend) return alert("Select a friend first!");
-    const text = document.getElementById("messageInput").value.trim();
-    if (!text) return;
+            document.getElementById("messageInput").value = "";
+            loadMessages();
+        }
 
-    const Message = Parse.Object.extend("Messages");
-    const message = new Message();
-    message.set("sender", currentUser.id);
-    message.set("receiver", currentFriend.id);
-    message.set("text", text);
+        async function loadMessages() {
+            if (!friendUser) return;
 
-    try {
-      await message.save();
-      document.getElementById("messageInput").value = "";
-      loadMessages();
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  }
+            const query1 = new Parse.Query("Messages");
+            query1.equalTo("sender", currentUser.get("username"));
+            query1.equalTo("receiver", friendUser.get("username"));
 
-  // Auto-refresh messages every 2 seconds
-  setInterval(loadMessages, 2000);
+            const query2 = new Parse.Query("Messages");
+            query2.equalTo("sender", friendUser.get("username"));
+            query2.equalTo("receiver", currentUser.get("username"));
 
-  loadFriends();
-</script>
+            const mainQuery = Parse.Query.or(query1, query2);
+            mainQuery.ascending("createdAt");
+
+            const results = await mainQuery.find();
+
+            const container = document.getElementById("messages");
+            container.innerHTML = "";
+
+            results.forEach(msg => {
+                const div = document.createElement("div");
+                div.classList.add("message");
+                if (msg.get("sender") === currentUser.get("username")) {
+                    div.classList.add("sent");
+                } else {
+                    div.classList.add("received");
+                }
+                div.innerText = msg.get("text");
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Auto-refresh messages
+        setInterval(loadMessages, 2000);
+    </script>
 </body>
-      </html>
+</html>
