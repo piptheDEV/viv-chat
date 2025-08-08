@@ -1,191 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Viv Chat</title>
-  <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: white;
       display: flex;
       height: 100vh;
+      background-color: #121212;
+      color: white;
     }
-
-    /* Friends Sidebar */
-    #friends {
-      width: 220px;
-      background-color: #1e1e1e;
+    .sidebar {
+      width: 250px;
+      background-color: #1f1f1f;
       padding: 10px;
-      border-right: 2px solid #222;
-      display: flex;
-      flex-direction: column;
-    }
-    #friends h2 {
-      margin: 5px 0;
-      font-size: 18px;
-      text-align: center;
-    }
-    #friends-list {
-      flex: 1;
       overflow-y: auto;
+      border-right: 2px solid #333;
     }
     .friend {
-      padding: 8px;
-      background: #2a2a2a;
-      margin: 5px 0;
-      border-radius: 6px;
+      padding: 10px;
       cursor: pointer;
+      border-bottom: 1px solid #333;
     }
     .friend:hover {
-      background: #333;
+      background-color: #333;
     }
-
-    /* Chat area */
-    #chat {
+    .chat-container {
       flex: 1;
       display: flex;
       flex-direction: column;
     }
-
-    #messages {
+    .messages {
       flex: 1;
       padding: 10px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
-
     .message {
       padding: 8px;
       margin: 5px;
       border-radius: 8px;
       max-width: 60%;
-      word-wrap: break-word;
     }
-
-    .mine {
+    .sent {
       background-color: #00ffe1;
       color: black;
-      margin-left: auto;
-      text-align: right;
+      align-self: flex-end;
     }
-
-    .theirs {
+    .received {
       background-color: #333;
-      color: white;
-      margin-right: auto;
-      text-align: left;
+      align-self: flex-start;
     }
-
-    /* Input box */
-    #input-area {
+    .input-container {
       display: flex;
-      border-top: 2px solid #222;
-      background: #1e1e1e;
+      padding: 10px;
+      background-color: #1f1f1f;
     }
-    #message-input {
+    .input-container input {
       flex: 1;
       padding: 10px;
       border: none;
-      background: #1e1e1e;
+      border-radius: 6px;
+      background-color: #333;
       color: white;
     }
-    #send-btn {
-      padding: 10px 20px;
+    .input-container button {
+      margin-left: 10px;
+      padding: 10px;
       border: none;
+      border-radius: 6px;
       background-color: #00ffe1;
       color: black;
+      font-weight: bold;
       cursor: pointer;
     }
-    #send-btn:hover {
-      background-color: #00c9b0;
-    }
   </style>
-</head>
-<body>
-
-  <!-- Friends Sidebar -->
-  <div id="friends">
-    <h2>Friends</h2>
-    <div id="friends-list">
-      <!-- Friends will appear here -->
-    </div>
-    <input type="text" id="add-friend-input" placeholder="Add friend" />
-    <button id="add-friend-btn">Add</button>
-  </div>
-
-  <!-- Chat Area -->
-  <div id="chat">
-    <div id="messages"></div>
-    <div id="input-area">
-      <input type="text" id="message-input" placeholder="Type your message..." />
-      <button id="send-btn">Send</button>
-    </div>
-  </div>
-
+  <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
   <script>
-    // Parse Init
-    Parse.initialize("YOUR_APP_ID", "YOUR_JS_KEY");
-    Parse.serverURL = "https://parseapi.back4app.com";
+    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+    Parse.serverURL = "https://parseapi.back4app.com/";
 
     const currentUser = Parse.User.current();
     if (!currentUser) {
-      window.location.href = "index.html"; // back to login if not logged in
+      window.location.href = "login.html";
     }
 
-    const username = currentUser.get("username");
+    let selectedFriend = null;
 
-    // Chat Class
-    const Message = Parse.Object.extend("Message");
+    async function loadFriends() {
+      // For now, just show all users except current
+      const query = new Parse.Query(Parse.User);
+      query.notEqualTo("objectId", currentUser.id);
+      const users = await query.find();
+      const sidebar = document.querySelector(".sidebar");
+      sidebar.innerHTML = "";
+      users.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "friend";
+        div.textContent = u.get("username");
+        div.onclick = () => selectFriend(u);
+        sidebar.appendChild(div);
+      });
+    }
 
-    function renderMessage(message) {
-      const isMine = message.get("username") === username;
-      const msgDiv = document.createElement("div");
-      msgDiv.className = isMine ? "message mine" : "message theirs";
-      msgDiv.innerHTML = `<strong>${message.get("username")}</strong>: ${message.get("text")}`;
-      document.getElementById("messages").appendChild(msgDiv);
-      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    async function selectFriend(friend) {
+      selectedFriend = friend;
+      document.querySelector(".messages").innerHTML = "";
+      subscribeToMessages();
     }
 
     async function sendMessage() {
-      const text = document.getElementById("message-input").value.trim();
-      if (!text) return;
+      if (!selectedFriend) return;
+      const text = document.getElementById("messageInput").value;
+      if (!text.trim()) return;
+      const Message = Parse.Object.extend("Message");
       const msg = new Message();
-      msg.set("username", username);
+      msg.set("sender", currentUser);
+      msg.set("receiver", selectedFriend);
       msg.set("text", text);
       await msg.save();
-      document.getElementById("message-input").value = "";
+      document.getElementById("messageInput").value = "";
     }
 
-    document.getElementById("send-btn").addEventListener("click", sendMessage);
-    document.getElementById("message-input").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
+    function subscribeToMessages() {
+      const query = new Parse.Query("Message");
+      query.equalTo("sender", currentUser);
+      query.equalTo("receiver", selectedFriend);
 
-    // Live Query setup
-    async function setupLiveQuery() {
-      const query = new Parse.Query(Message);
-      query.ascending("createdAt");
-      const results = await query.find();
-      results.forEach(renderMessage);
+      const query2 = new Parse.Query("Message");
+      query2.equalTo("sender", selectedFriend);
+      query2.equalTo("receiver", currentUser);
 
-      const liveQueryClient = new Parse.LiveQueryClient({
-        applicationId: "NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m",
-        serverURL: "wss://viv-chat.b4a.io", // Back4App Live Query server
-        javascriptKey: "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf"
+      const mainQuery = Parse.Query.or(query, query2);
+      mainQuery.ascending("createdAt");
+
+      const subscription = mainQuery.subscribe();
+      subscription.on("create", showMessage);
+
+      mainQuery.find().then(results => {
+        results.forEach(showMessage);
       });
-      liveQueryClient.open();
-
-      const subscription = liveQueryClient.subscribe(query);
-      subscription.on("create", (message) => renderMessage(message));
     }
 
-    setupLiveQuery();
-  </script>
+    function showMessage(msg) {
+      const div = document.createElement("div");
+      div.className = "message " + (msg.get("sender").id === currentUser.id ? "sent" : "received");
+      div.textContent = msg.get("text");
+      document.querySelector(".messages").appendChild(div);
+    }
 
+    window.onload = loadFriends;
+  </script>
+</head>
+<body>
+  <div class="sidebar"></div>
+  <div class="chat-container">
+    <div class="messages"></div>
+    <div class="input-container">
+      <input type="text" id="messageInput" placeholder="Type a message..."/>
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
 </body>
-</html>
+                            </html>
