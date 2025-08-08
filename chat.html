@@ -1,162 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Viv Chat</title>
-<style>
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #121212;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-
-  header {
-    background-color: #00ffe1;
-    color: black;
-    padding: 15px;
-    font-size: 1.2em;
-    font-weight: bold;
-    text-align: center;
-    box-shadow: 0 0 10px rgba(0, 255, 225, 0.6);
-  }
-
-  #chat-box {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .message {
-    max-width: 70%;
-    padding: 10px;
-    border-radius: 10px;
-    font-size: 0.95em;
-    line-height: 1.4;
-    animation: fadeIn 0.3s ease-in-out;
-  }
-
-  .sent {
-    background-color: #00ffe1;
-    color: black;
-    align-self: flex-end;
-  }
-
-  .received {
-    background-color: #2a2a2a;
-    color: white;
-    align-self: flex-start;
-  }
-
-  .sender {
-    font-size: 0.75em;
-    color: #ccc;
-    margin-bottom: 3px;
-  }
-
-  #input-area {
-    display: flex;
-    padding: 10px;
-    background-color: #1e1e1e;
-    border-top: 1px solid #333;
-  }
-
-  #message-input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    background-color: #2a2a2a;
-    color: white;
-  }
-
-  #send-btn {
-    background-color: #00ffe1;
-    border: none;
-    padding: 10px 15px;
-    margin-left: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-
-  #send-btn:hover {
-    background-color: #00ccba;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
-<script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
-<script>
-  Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-  Parse.serverURL = "https://parseapi.back4app.com/";
-
-  let currentUser;
-
-  async function loadMessages() {
-    const Message = Parse.Object.extend("Message");
-    const query = new Parse.Query(Message);
-    query.ascending("createdAt");
-    query.limit(50);
-    const results = await query.find();
-    const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML = "";
-    results.forEach(msg => {
-      const sender = msg.get("sender");
-      const text = msg.get("text");
-      const div = document.createElement("div");
-      div.classList.add("message");
-      div.classList.add(sender === currentUser.getUsername() ? "sent" : "received");
-      div.innerHTML = `<div class="sender">${sender}</div>${text}`;
-      chatBox.appendChild(div);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-
-  async function sendMessage() {
-    const input = document.getElementById("message-input");
-    const text = input.value.trim();
-    if (!text) return;
-
-    const Message = Parse.Object.extend("Message");
-    const message = new Message();
-    message.set("sender", currentUser.getUsername());
-    message.set("text", text);
-    await message.save();
-
-    input.value = "";
-    loadMessages();
-  }
-
-  async function init() {
-    currentUser = Parse.User.current();
-    if (!currentUser) {
-      window.location.href = "index.html";
-      return;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viv Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      height: 100vh;
     }
-    loadMessages();
-    setInterval(loadMessages, 2000); // auto refresh every 2s
-  }
-
-  window.onload = init;
-</script>
+    /* Side panel */
+    .sidebar {
+      width: 250px;
+      background-color: #1f1f1f;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 15px;
+      font-size: 1.2em;
+      border-bottom: 1px solid #333;
+      text-align: center;
+      background-color: #00ffe1;
+      color: black;
+    }
+    .friend-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .friend {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+      transition: background 0.3s;
+    }
+    .friend:hover {
+      background-color: #2a2a2a;
+    }
+    .add-friend {
+      padding: 10px;
+      display: flex;
+      border-top: 1px solid #333;
+    }
+    .add-friend input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      background-color: #333;
+      color: white;
+    }
+    .add-friend button {
+      padding: 8px;
+      margin-left: 5px;
+      background-color: #00ffe1;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    /* Chat area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      padding: 15px;
+      border-bottom: 1px solid #333;
+      background-color: #1f1f1f;
+      font-weight: bold;
+    }
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .message {
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 60%;
+    }
+    .me {
+      background-color: #00ffe1;
+      color: black;
+      align-self: flex-end;
+    }
+    .them {
+      background-color: #2a2a2a;
+      align-self: flex-start;
+    }
+    .message-input {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #333;
+      background-color: #1f1f1f;
+    }
+    .message-input input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      background-color: #333;
+      color: white;
+    }
+    .message-input button {
+      padding: 8px 15px;
+      margin-left: 5px;
+      background-color: #00ffe1;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
 </head>
 <body>
-  <header>Viv Chat 💬</header>
-  <div id="chat-box"></div>
-  <div id="input-area">
-    <input type="text" id="message-input" placeholder="Type a message..." />
-    <button id="send-btn" onclick="sendMessage()">Send</button>
+  <div class="sidebar">
+    <div class="sidebar-header">Friends</div>
+    <div class="friend-list" id="friendList"></div>
+    <div class="add-friend">
+      <input type="text" id="friendUsername" placeholder="Add friend..." />
+      <button onclick="addFriend()">+</button>
+    </div>
   </div>
+
+  <div class="chat-area">
+    <div class="chat-header" id="chatHeader">Select a friend</div>
+    <div class="messages" id="messages"></div>
+    <div class="message-input">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+    Parse.serverURL = "https://parseapi.back4app.com/";
+
+    let currentUser = Parse.User.current();
+    let selectedFriend = null;
+
+    async function loadFriends() {
+      const Friend = Parse.Object.extend("Friends");
+      const query = new Parse.Query(Friend);
+      query.equalTo("owner", currentUser.getUsername());
+      const results = await query.find();
+      const friendList = document.getElementById("friendList");
+      friendList.innerHTML = "";
+      results.forEach(f => {
+        const friendName = f.get("friendName");
+        const div = document.createElement("div");
+        div.classList.add("friend");
+        div.textContent = friendName;
+        div.onclick = () => selectFriend(friendName);
+        friendList.appendChild(div);
+      });
+    }
+
+    async function addFriend() {
+      const username = document.getElementById("friendUsername").value.trim();
+      if (!username) return;
+      const Friend = Parse.Object.extend("Friends");
+      const newFriend = new Friend();
+      newFriend.set("owner", currentUser.getUsername());
+      newFriend.set("friendName", username);
+      await newFriend.save();
+      document.getElementById("friendUsername").value = "";
+      loadFriends();
+    }
+
+    function selectFriend(friendName) {
+      selectedFriend = friendName;
+      document.getElementById("chatHeader").textContent = friendName;
+      loadMessages();
+    }
+
+    async function loadMessages() {
+      const Message = Parse.Object.extend("Messages");
+      const query = new Parse.Query(Message);
+      query.containedIn("sender", [currentUser.getUsername(), selectedFriend]);
+      query.containedIn("receiver", [currentUser.getUsername(), selectedFriend]);
+      query.ascending("createdAt");
+      const results = await query.find();
+      const msgContainer = document.getElementById("messages");
+      msgContainer.innerHTML = "";
+      results.forEach(m => {
+        const div = document.createElement("div");
+        div.classList.add("message");
+        if (m.get("sender") === currentUser.getUsername()) {
+          div.classList.add("me");
+        } else {
+          div.classList.add("them");
+        }
+        div.textContent = m.get("text");
+        msgContainer.appendChild(div);
+      });
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    async function sendMessage() {
+      if (!selectedFriend) return;
+      const text = document.getElementById("messageInput").value.trim();
+      if (!text) return;
+      const Message = Parse.Object.extend("Messages");
+      const msg = new Message();
+      msg.set("sender", currentUser.getUsername());
+      msg.set("receiver", selectedFriend);
+      msg.set("text", text);
+      await msg.save();
+      document.getElementById("messageInput").value = "";
+      loadMessages();
+    }
+
+    // Init
+    if (!currentUser) {
+      window.location.href = "index.html";
+    } else {
+      loadFriends();
+    }
+  </script>
 </body>
-      </html>
+</html>
