@@ -1,189 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Viv Chat – Messages</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 0;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Viv Chat</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #121212;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
 
-    header {
-      background: #6c63ff;
-      color: white;
-      padding: 20px;
-      text-align: center;
-      font-size: 24px;
-    }
+  header {
+    background-color: #00ffe1;
+    color: black;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 255, 225, 0.6);
+  }
 
-    #chat-container {
-      display: flex;
-      flex-direction: column;
-      max-width: 600px;
-      margin: 40px auto;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+  #chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-    #recipient-section {
-      padding: 20px;
-      background: #f0f0f0;
-    }
+  .message {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease-in-out;
+  }
 
-    #recipient-section input {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-    }
+  .sent {
+    background-color: #00ffe1;
+    color: black;
+    align-self: flex-end;
+  }
 
-    #messages {
-      height: 300px;
-      overflow-y: scroll;
-      padding: 20px;
-      background: #fff;
-      border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
-    }
+  .received {
+    background-color: #2a2a2a;
+    color: white;
+    align-self: flex-start;
+  }
 
-    .message {
-      margin-bottom: 10px;
-    }
+  .sender {
+    font-size: 0.75em;
+    color: #ccc;
+    margin-bottom: 3px;
+  }
 
-    .from-me {
-      text-align: right;
-      color: #6c63ff;
-    }
+  #input-area {
+    display: flex;
+    padding: 10px;
+    background-color: #1e1e1e;
+    border-top: 1px solid #333;
+  }
 
-    .from-other {
-      text-align: left;
-      color: #333;
-    }
+  #message-input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2a2a2a;
+    color: white;
+  }
 
-    #send-section {
-      display: flex;
-      padding: 10px;
-      background: #fafafa;
-    }
+  #send-btn {
+    background-color: #00ffe1;
+    border: none;
+    padding: 10px 15px;
+    margin-left: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+  }
 
-    #send-section input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-    }
+  #send-btn:hover {
+    background-color: #00ccba;
+  }
 
-    #send-section button {
-      padding: 10px 20px;
-      background: #6c63ff;
-      color: white;
-      border: none;
-      cursor: pointer;
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+<script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
+<script>
+  Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
+  Parse.serverURL = "https://parseapi.back4app.com/";
+
+  let currentUser;
+
+  async function loadMessages() {
+    const Message = Parse.Object.extend("Message");
+    const query = new Parse.Query(Message);
+    query.ascending("createdAt");
+    query.limit(50);
+    const results = await query.find();
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = "";
+    results.forEach(msg => {
+      const sender = msg.get("sender");
+      const text = msg.get("text");
+      const div = document.createElement("div");
+      div.classList.add("message");
+      div.classList.add(sender === currentUser.getUsername() ? "sent" : "received");
+      div.innerHTML = `<div class="sender">${sender}</div>${text}`;
+      chatBox.appendChild(div);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById("message-input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const Message = Parse.Object.extend("Message");
+    const message = new Message();
+    message.set("sender", currentUser.getUsername());
+    message.set("text", text);
+    await message.save();
+
+    input.value = "";
+    loadMessages();
+  }
+
+  async function init() {
+    currentUser = Parse.User.current();
+    if (!currentUser) {
+      window.location.href = "index.html";
+      return;
     }
-  </style>
+    loadMessages();
+    setInterval(loadMessages, 2000); // auto refresh every 2s
+  }
+
+  window.onload = init;
+</script>
 </head>
 <body>
-  <header>Viv Chat</header>
-  <div id="chat-container">
-    <div id="recipient-section">
-      <input type="text" id="recipientInput" placeholder="Enter recipient username" />
-    </div>
-
-    <div id="messages"></div>
-
-    <div id="send-section">
-      <input type="text" id="messageInput" placeholder="Type a message..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>
+  <header>Viv Chat 💬</header>
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <input type="text" id="message-input" placeholder="Type a message..." />
+    <button id="send-btn" onclick="sendMessage()">Send</button>
   </div>
-
-  <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
-  <script>
-    Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
-    Parse.serverURL = "https://parseapi.back4app.com/";
-
-    const currentUser = localStorage.getItem("viv_user");
-    if (!currentUser) {
-      alert("Not logged in. Redirecting...");
-      window.location.href = "index.html";
-    }
-
-    const messagesDiv = document.getElementById("messages");
-    const recipientInput = document.getElementById("recipientInput");
-    const messageInput = document.getElementById("messageInput");
-
-    // Track shown message IDs to prevent duplicates
-    let shownMessageIds = new Set();
-
-    async function sendMessage() {
-      const recipient = recipientInput.value.trim();
-      const message = messageInput.value.trim();
-      if (!recipient || !message) return;
-
-      const Message = Parse.Object.extend("Messages");
-      const msg = new Message();
-      msg.set("sender", currentUser);
-      msg.set("receiver", recipient);
-      msg.set("text", message);
-
-      try {
-        await msg.save();
-        messageInput.value = "";
-        fetchMessages();
-      } catch (error) {
-        alert("Error sending message: " + error.message);
-      }
-    }
-
-    async function fetchMessages() {
-      const recipient = recipientInput.value.trim();
-      if (!recipient) return;
-
-      const Message = Parse.Object.extend("Messages");
-      const query1 = new Parse.Query(Message);
-      query1.equalTo("sender", currentUser);
-      query1.equalTo("receiver", recipient);
-
-      const query2 = new Parse.Query(Message);
-      query2.equalTo("sender", recipient);
-      query2.equalTo("receiver", currentUser);
-
-      const mainQuery = Parse.Query.or(query1, query2);
-      mainQuery.ascending("createdAt");
-      mainQuery.limit(100);
-
-      try {
-        const results = await mainQuery.find();
-
-        for (const msg of results) {
-          const msgId = msg.id;
-          if (shownMessageIds.has(msgId)) continue;
-
-          const msgEl = document.createElement("div");
-          const from = msg.get("sender") === currentUser ? "from-me" : "from-other";
-          msgEl.className = "message " + from;
-          msgEl.textContent = `${msg.get("sender")}: ${msg.get("text")}`;
-          messagesDiv.appendChild(msgEl);
-
-          shownMessageIds.add(msgId);
-        }
-
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      } catch (error) {
-        console.error("Fetch error:", error.message);
-      }
-    }
-
-    recipientInput.addEventListener("change", () => {
-      shownMessageIds.clear();
-      messagesDiv.innerHTML = "";
-      fetchMessages();
-    });
-
-    setInterval(fetchMessages, 5000); // refresh every 5 seconds
-  </script>
 </body>
-</html>
+      </html>
