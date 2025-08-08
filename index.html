@@ -48,48 +48,74 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    button:hover {
-      background-color: #00ccba;
-    }
-    p {
-      text-align: center;
-      font-size: 0.9em;
-      margin-top: 10px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
+    button:hover { background-color: #00ccba; }
+    .small { text-align:center; margin-top:10px; font-size:0.9em; color:#ddd; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
   </style>
+
   <script src="https://unpkg.com/parse@3.4.4/dist/parse.min.js"></script>
   <script>
+    // === Back4App keys (your keys) ===
     Parse.initialize("NtcUKphlkMFY9kWIbXMFjzMI3O66bx6Ns9MgCL3m", "TmpoEPhIIdwJsKvp6WS96mBeGI4VK2jRmdcSlXPf");
     Parse.serverURL = "https://parseapi.back4app.com/";
 
+    // helper: save current user info (username + sessionToken) to localStorage
+    function saveSessionToLocal() {
+      const user = Parse.User.current();
+      if (!user) return;
+      const payload = {
+        username: user.get("username"),
+        sessionToken: user.getSessionToken()
+      };
+      localStorage.setItem("viv_currentUser", JSON.stringify(payload));
+    }
+
     async function login() {
-      const username = document.getElementById("username").value;
+      const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
+      if (!username || !password) { alert("Enter username and password"); return; }
+
       try {
         await Parse.User.logIn(username, password);
+        // store session + username
+        saveSessionToLocal();
+        // redirect to chat.html (explicit .html)
         window.location.href = "chat.html";
       } catch (error) {
-        alert("Error: " + error.message);
+        alert("Login error: " + error.message);
       }
     }
 
     async function signUp() {
-      const username = document.getElementById("username").value;
+      const username = document.getElementById("username").value.trim();
       const password = document.getElementById("password").value;
-      const user = new Parse.User();
-      user.set("username", username);
-      user.set("password", password);
+      if (!username || !password) { alert("Enter username and password"); return; }
+
       try {
+        const user = new Parse.User();
+        user.set("username", username);
+        user.set("password", password);
         await user.signUp();
+        // after signUp Parse logs in automatically — save session
+        saveSessionToLocal();
         window.location.href = "chat.html";
       } catch (error) {
-        alert("Error: " + error.message);
+        alert("Sign up error: " + error.message);
       }
     }
+
+    // Optional: on page load if already logged in, redirect automatically
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const saved = localStorage.getItem("viv_currentUser");
+        if (saved) {
+          // quick check — if Parse.User.current() already exists, jump
+          if (Parse.User.current()) {
+            window.location.href = "chat.html";
+          }
+        }
+      } catch (e) { /* ignore */ }
+    });
   </script>
 </head>
 <body>
@@ -98,8 +124,8 @@
     <input type="text" id="username" placeholder="Username" />
     <input type="password" id="password" placeholder="Password" />
     <button onclick="login()">Login</button>
-    <p>or</p>
+    <p class="small">or</p>
     <button onclick="signUp()">Sign Up</button>
   </div>
 </body>
-</html>
+  </html>
